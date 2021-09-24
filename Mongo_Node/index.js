@@ -219,20 +219,92 @@ const { json } = require('express');
 
   })
 
-  app.get('/averageStandups', function (req, res){
+  app.get('/avgWeight', function (req, res){
     Time
     .find({user: actual })
     .exec((err, list) => {
       if (err) throw err;
       // console.log(list);
 
+      let hashList = []
 
-      let logList = list.map((item) => {
-        newItem = JSON.parse(JSON.stringify(item))
-        return {date: new Date(newItem.begining).toLocaleDateString("en-US"), beginning: new Date(newItem.begining).toLocaleTimeString("en-US"), end: new Date(newItem.end).toLocaleTimeString("en-US")}
-      })
+      for(node of list) {
+        item = JSON.parse(JSON.stringify(node))
 
-      res.json(logList)
+        if(!hashList[new Date(item.begining).toLocaleDateString("en-US")]) hashList[new Date(item.begining).toLocaleDateString("en-US")] = []
+        hashList[new Date(item.begining).toLocaleDateString("en-US")].push(item.user.Peso)
+        // console.log(item.user.Peso)
+      }
+      // console.log(hashList)
+
+      avrList = []
+      for(date in hashList){
+        const sum = hashList[date].reduce((a, b) => a + b, 0);
+        const avg = (sum / hashList[date].length) || 0;
+        avrList.push({date: date, avgWeight: avg })
+      }
+
+      res.json({ 'avgWeight': avrList })
+
+    })
+
+  })
+
+    app.get('/avgUsage', function (req, res){
+    Time
+    .find({user: actual })
+    .exec((err, list) => {
+      if (err) throw err;
+      // console.log(list);
+
+      let hashList = []
+
+      for(node of list) {
+        item = JSON.parse(JSON.stringify(node))
+
+        if(!hashList[new Date(item.begining).toLocaleDateString("en-US")]) hashList[new Date(item.begining).toLocaleDateString("en-US")] = []
+        hashList[new Date(item.begining).toLocaleDateString("en-US")].push(diff_hours(item.end, item.begining))
+        // console.log(item.user.Peso)
+      }
+      // console.log(hashList)
+
+      avrList = []
+      for(date in hashList){
+        const sum = hashList[date].reduce((a, b) => a + b, 0);
+        const avg = (sum / hashList[date].length) || 0;
+        avrList.push({date: date, avgWeight: avg })
+      }
+
+      res.json({ 'avgUsage': avrList })
+
+    })
+
+  })
+
+    app.get('/avgStandups', function (req, res){
+    Time
+    .find({user: actual })
+    .exec((err, list) => {
+      if (err) throw err;
+      // console.log(list);
+
+      let hashList = []
+
+      for(node of list) {
+        item = JSON.parse(JSON.stringify(node))
+
+        if(!hashList[new Date(item.begining).toLocaleDateString("en-US")]) hashList[new Date(item.begining).toLocaleDateString("en-US")] = []
+        hashList[new Date(item.begining).toLocaleDateString("en-US")].push(item.user.Peso)
+        // console.log(item.user.Peso)
+      }
+      // console.log(hashList)
+
+      avgList = []
+      for(date in hashList){
+        avgList.push({date: date, avgStandups: hashList[date].length})
+      }
+
+      res.json(avgList)
 
     })
 
@@ -242,10 +314,14 @@ const { json } = require('express');
     res.json({Peso: actual.Peso })
   })
 
+  app.get('/time', function (req, res){
+    res.json({time : actualTime })
+  })
+
   app.get('/getUser', function (req, res){
     res.json(actual)
   })
-  
+
   app.post('/register', function (req, res){
     let newUser = req.body
     newUser.Peso = actual.Peso
