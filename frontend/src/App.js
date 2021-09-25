@@ -8,6 +8,7 @@ import FusionTheme from 'fusioncharts/themes/fusioncharts.theme.fusion';
 import FusionWidget from 'fusioncharts/fusioncharts.widgets';
 import MaterialTable from 'material-table';
 import { Label } from 'semantic-ui-react'
+import moment from 'moment'
 
 
 
@@ -80,7 +81,6 @@ class App extends React.Component {
             <Link to="/TiempoUso">Tiempo de uso de la silla</Link>
             <Link to="/Historial">Historial del tiempo de uso de la silla</Link>
             <Link to="/Registrados">Últimos casos registrados</Link>
-            <Link to="/Rango">Rango de edades de infectados</Link>
           </nav>
         </div>
         <Switch>
@@ -98,9 +98,6 @@ class App extends React.Component {
           </Route>
           <Route path="/Registrados">
             <Registrados />
-          </Route>
-          <Route path="/Rango">
-            <Rango />
           </Route>
           <Route path="/">
             <Home />
@@ -209,6 +206,22 @@ function TendenciaPeso(){
   return userData
 }
 
+function MayorUsoNombre(){
+  const gitHubUrl = "http://localhost:3000/tiempo_uso_por_dia_nombre"
+  const [userData, setUserData] = useState({});
+
+  useEffect(() => {
+    getGitHubUserWithFetch();
+  }, []);
+
+  const getGitHubUserWithFetch = async () => {
+    const response = await fetch(gitHubUrl);
+    const jsonData = await response.json();
+    setUserData(jsonData);
+  };
+  return userData
+}
+
 function LogUso(){
   const gitHubUrl = "http://localhost:3000/usageLog"
   const [userData, setUserData] = useState({});
@@ -258,7 +271,8 @@ function Region() {
   const getPais = getPaises()
   const getDia = getUsoDia()
   const getTenPeso = getTendencia()
-  console.log(getTenPeso)
+  const getMayorNombre = getMayorUso()
+  console.log(getMayorNombre)
 
   const dataSourcePais = {
     chart: {
@@ -298,6 +312,21 @@ function Region() {
     },
     data: getDia
   };
+
+  const dataSourceNombre = {
+    chart: {
+      "caption": "Días de mayor uso",
+      decimals: "1",
+      showvalues: "1",
+      plottooltext: "$label: <b>$dataValue</b>",
+      plotfillalpha: "70",
+      theme: "fusion",
+      streamlineddata: "0",
+      showvalues: "0"
+    },
+    dataset:[{data: getMayorNombre}]
+  };
+
   return (
     <div className="grid-container">
       <div class="one">
@@ -334,6 +363,13 @@ function Region() {
           height="32%"
           dataFormat="JSON"
           dataSource={dataSourceTendencia}
+        />
+    <ReactFusioncharts  
+          type="sparkline"
+          width="60%"
+          height="32%"
+          dataFormat="JSON"
+          dataSource={dataSourceNombre}
         />
     
      </div>
@@ -407,10 +443,12 @@ function getTendencia(){
   const userData = TendenciaPeso()
   var grafPaises = []
   for(var key in userData){
-    let find = grafPaises.find( o => o.label === userData[key].fecha);
-    let index = grafPaises.findIndex( o => o.label === userData[key].fecha);
+    
+    console.log(moment(userData[key].fecha).format('MMMM Do YYYY'))
+    let find = grafPaises.find( o => o.label === moment(userData[key].fecha).format('MMMM Do YYYY'));
+    let index = grafPaises.findIndex( o => o.label === moment(userData[key].fecha).format('MMMM Do YYYY'));
     if(!find){
-      grafPaises.push({label: userData[key].fecha ,value: userData[key].peso  })
+      grafPaises.push({label: moment(userData[key].fecha).format('MMMM Do YYYY') ,value: userData[key].peso  })
     }
     else{
       grafPaises[index].value = grafPaises[index].value + 1 
@@ -438,13 +476,13 @@ function getUsoDia(){
 }
 
 function getMayorUso(){
-  const userData = TiempoUsoDia()
+  const userData = MayorUsoNombre()
   var grafPaises = []
   for(var key in userData){
-    let find = grafPaises.find( o => o.label === userData[key].fecha);
-    let index = grafPaises.findIndex( o => o.label === userData[key].fecha);
+    let find = grafPaises.find( o => o.label === userData[key].dia);
+    let index = grafPaises.findIndex( o => o.label === userData[key].dia);
     if(!find){
-      grafPaises.push({label: userData[key].fecha ,value: userData[key].tiempo_milis })
+      grafPaises.push({label: userData[key].dia ,value: userData[key].tiempo_milis })
     }
   }
   grafPaises.sort(function(a,b) { return a.value - b.value});
@@ -467,6 +505,7 @@ function Paises() {
     },
     data: getDia
   };
+
 
   const dataSourceMenor = {
     chart: {
